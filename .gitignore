@@ -1,0 +1,4 @@
+node_modules
+.env
+email_test.js
+
