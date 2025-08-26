@@ -3,6 +3,8 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const sendEmail = require("../utils/email");
+const { request } = require("http");
+const { send } = require("process");
 require("dotenv").config();
 async function login(req, res) {
   try {
@@ -85,12 +87,31 @@ async function resetPassword(req, res) {
   }
 }
 
-async function forgetPassword(req, res) {}
+async function forgetPassword(req, res) {
+  const { email } = req.body;
+   const user = User.findOne({ where: { email } });
+    //am here
+  if (!user) {
+    return res.json({ success: false, message: "Email not found!" })
+  }
+
+  //send 
+  const cuurentserver= req.socket.server.localAddress;
+ await sendEmail({
+    to: email,
+    subject: "Reset your password",
+    html: `<p>Click <a href="http://localhost:3000/reset-password/${user.id}">here</a> to reset your password</p>`,
+  });
+  return res.json({ success: true, message: "Reset password email sent" });
+}
+
+
+
 async function sendVerifyEmail(req, res) {
   try {
     const emailVerificationToken = crypto.randomBytes(32).toString("hex");
     const user = await User.findByPk(req.user.id);
-    if (!user.isverify) {
+    if (user.isverify) {
       return res
         .status(400)
         .json({ success: false, message: "Email is already verified" });
@@ -99,7 +120,7 @@ async function sendVerifyEmail(req, res) {
     const verifyUrl = `http://localhost:8000/api/auth/verify-email/${emailVerificationToken}`;
     console.log("did you get here");
     sendEmail({
-      to: "moshoodojuoye1@gmail.com",
+      to: user.email,
       subject: "Verify your email",
       html: `
   <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 30px;">
@@ -107,7 +128,7 @@ async function sendVerifyEmail(req, res) {
       
       <!-- Header -->
       <div style="background: linear-gradient(135deg, #4CAF50, #2E7D32); padding: 20px; text-align: center;">
-        <h1 style="color: #fff; margin: 0; font-size: 24px;">Welcome to MyApp 🎉</h1>
+        <h1 style="color: #fff; margin: 0; font-size: 24px;">Welcome AuthApp 🎉</h1>
       </div>
       
       <!-- Body -->
@@ -116,7 +137,7 @@ async function sendVerifyEmail(req, res) {
           user.name || "there"
         },</p>
         <p style="font-size: 16px; line-height: 1.6;">
-          Thank you for signing up with <strong>MyApp</strong>! We're excited to have you on board 🚀.  
+          Thank you for signing up with <strong>AuthApp</strong>! We're excited to have you on board 🚀.  
           Before you get started, please verify your email address by clicking the button below:
         </p>
         
@@ -135,13 +156,13 @@ async function sendVerifyEmail(req, res) {
         
         <p style="font-size: 14px; margin-top: 30px; color: #555;">
           Cheers, <br>
-          The <strong>MyApp</strong> Team
+          The <strong>AuthApp</strong> Team
         </p>
       </div>
       
       <!-- Footer -->
       <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #777;">
-        © ${new Date().getFullYear()} MyApp. All rights reserved.
+        © ${new Date().getFullYear()} AuthApp. All rights reserved.
       </div>
     </div>
   </div>

@@ -36,6 +36,7 @@ async function createUser(req, res) {
 }
 
 async function updateUser(req, res) {
+  
   try {
     const userId = req.params.id;
     console.log(userId);
